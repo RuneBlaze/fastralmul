@@ -1,9 +1,10 @@
 import subprocess
-from arstid import astrid_disco
+from arstid import astrid_disco, disco, astrid
 import argparse
 from sampler_frontend import strategy1
 from sampler import TreeSampler
 from treeutils import *
+from joblib import Parallel, delayed
 
 def import_trees(fn):
     trees = []
@@ -46,10 +47,13 @@ parser.add_argument('-t', '--threshold', type = float, default = -1)
 args = parser.parse_args()
 G = import_trees(args.input)
 sampler = TreeSampler(G)
-samples = strategy1(1, sampler)
-X = []
-for s in samples:
-    X.append(astrid_disco([G[i] for i in s]))
+samples = strategy1(51, sampler)
+
+DISCO_cache = Parallel(n_jobs=-1)(delayed(disco)(g) for g in G)
+def compute_sample(s):
+    return astrid(*[DISCO_cache[i] for i in s])
+
+X = Parallel(n_jobs=-1)(delayed(compute_sample)(s) for s in samples)
 
 res = None
 if args.threshold > 0:

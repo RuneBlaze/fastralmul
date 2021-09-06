@@ -35,8 +35,9 @@ def complete_trees(gtrees, ctree):
     return subprocess.check_output(cmd, shell=True,text=True)
 
 def run_apro(gtreepath, ctreepath, streepath):
-    cmd = f"sh /home/baqiaol2/scratch/A-Pro/apro.sh {gtreepath} {ctreepath} {streepath}"
-    subprocess.run(cmd)
+    import os
+    cmd = f"sh /home/baqiaol2/scratch/A-pro/apro.sh {gtreepath} {ctreepath} {streepath}"
+    os.system(cmd)
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-i', '--input', type=str, required=True)
@@ -45,7 +46,7 @@ parser.add_argument('-t', '--threshold', type = float, default = -1)
 args = parser.parse_args()
 G = import_trees(args.input)
 sampler = TreeSampler(G)
-samples = strategy1(51, sampler)
+samples = strategy1(1, sampler)
 X = []
 for s in samples:
     X.append(astrid_disco([G[i] for i in s]))
@@ -54,9 +55,22 @@ res = None
 if args.threshold > 0:
     res = complete_trees(X, consensus(X, args.threshold))
 else:
-    res = "\n".join(X)
+    res = "\n".join(X) + "\n"
 
-with open(args.input + ".x") as fh:
-    fh.write(res)
+def strip(s):
+    import treeswift as ts
+    trees = [ts.read_tree_newick(s) for l in s.strip().split("\n")]
+    for t in trees:
+        t.resolve_polytomies()
+    for t in trees:
+        continue
+        for n in t.traverse_postorder(True, True):
+            n.edge_length = None
+            if not n.is_leaf():
+                n.label = None
+    return "\n".join([t.newick() for t in trees])
+
+with open(args.input + ".x", "w+") as fh:
+    fh.write(strip(res))
 
 run_apro(args.input, args.input + ".x", args.output)

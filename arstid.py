@@ -41,7 +41,7 @@ def astrid(gtrees, methods = "uns", explicit = True):
     return run_iterations(ts, D, methods)
 
 def disco(gtree):
-    from disco import get_min_root, tag, decompose, trivial
+    from disco import unroot, get_min_root, tag, decompose, trivial
     import treeswift
     tree = treeswift.read_tree_newick(gtree)
     root, _, _ = get_min_root(tree)
@@ -50,6 +50,7 @@ def disco(gtree):
     out = list(filter(lambda x:x.num_nodes(internal=False) >= 4, decompose(tree)))
     res = []
     for t in out:
+        unroot(t)
         t.suppress_unifurcations()
         res.append(t.newick())
     return res
